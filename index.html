@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Minesweepah</title>
+
+    <style>
+    .ms {
+        font-family: monospace;
+        font-size: 12px;
+    }
+    .ms .header {
+        font-family: monospace;
+        font-size: 12px;
+        width: 277px;
+        height: 44px;
+        position: relative;
+    }
+    .ms .header .clock {
+        position: absolute;
+        top: 0;
+        right: 0;
+    }
+    .ms .header button {
+        position: absolute;
+        top: 16px;
+        right: 0;
+    }
+    .ms button.square {
+        width: 2.5em;
+        height: 2.5em;
+        padding: 0;
+        margin: 0;
+
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+
+        -o-user-select: none;
+        user-select: none;
+    }
+    .ms button.square.revealed {
+        color: #aaa;
+        background: #ddd;
+    }
+    </style>
+</head>
+<body>
+
+    <div id="root"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        window.ms = new MS(document.getElementById("root"));
+    });
+    </script>
+    <script src="/ms.js"></script>
+
+</body>
+</html>
