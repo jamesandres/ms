@@ -3,11 +3,12 @@ import ReactDOM from 'react-dom';
 
 window.React = React; // Enable React dev tools
 
-const MINE = "💣"
-const FLAG = "⛳️"
+const MINE = "💣";
+const FLAG = "⛳️";
+const BLANK = "\u00a0";
 
 class MS {
-    constructor(el, mapWidth=25, mapHeight=45, mineiness=0.25) {
+    constructor(el, mapWidth=45, mapHeight=25, mineiness=0.25) {
         this.el = el;
         this.mapWidth = mapWidth;
         this.mapHeight = mapHeight;
@@ -50,7 +51,7 @@ class MS {
                 ox = x + i;
                 oy = y + j;
 
-                if (map[ox] === undefined || map[ox][oy] === undefined) {
+                if (map[oy] === undefined || map[oy][ox] === undefined) {
                     continue; // Out of bounds yo
                 }
 
@@ -64,7 +65,7 @@ class MS {
     _numMinesSurrounding(baseMap, x, y) {
         let numMines = 0;
         this.sweepAround(baseMap, x, y, (_x, _y) => {
-            if (baseMap[_x][_y].value === MINE) {
+            if (baseMap[_y][_x].value === MINE) {
                 numMines += 1;
             }
         });
@@ -79,22 +80,22 @@ class MS {
         let baseMap = [];
 
         // Build the base map. It contains only the mines
-        for (let x = 0; x < this.mapWidth; x += 1) {
-            baseMap[x] = [];
-            for (let y = 0; y < this.mapHeight; y += 1) {
-                baseMap[x][y] = this._defaultSquareData(this._shouldMakeMine() ? MINE : 0);
+        for (let y = 0; y < this.mapHeight; y += 1) {
+            baseMap[y] = [];
+            for (let x = 0; x < this.mapWidth; x += 1) {
+                baseMap[y][x] = this._defaultSquareData(this._shouldMakeMine() ? MINE : 0);
             };
         };
 
         // Build the final map. It contains both the base mines and the numbers.
         this.map = Object.assign([], baseMap);
-        for (let x = 0; x < this.mapWidth; x += 1) {
-            for (let y = 0; y < this.mapHeight; y += 1) {
-                if (baseMap[x][y].value === MINE) {
+        for (let y = 0; y < this.mapHeight; y += 1) {
+            for (let x = 0; x < this.mapWidth; x += 1) {
+                if (baseMap[y][x].value === MINE) {
                     continue;
                 }
 
-                this.map[x][y].value = this._numMinesSurrounding(baseMap, x, y);
+                this.map[y][x].value = this._numMinesSurrounding(baseMap, x, y);
             };
         };
     }
@@ -102,12 +103,12 @@ class MS {
     toString() {
         let lines = [], char;
 
-        for (let x = 0; x < this.mapWidth; x += 1) {
-            lines[x] = [];
-            for (let y = 0; y < this.mapHeight; y += 1) {
-                lines[x][y] = this.map[x][y].value;
+        for (let y = 0; y < this.mapHeight; y += 1) {
+            lines[y] = [];
+            for (let x = 0; x < this.mapWidth; x += 1) {
+                lines[y][x] = this.map[y][x].value;
             };
-            lines[x] = lines[x].join("\t");
+            lines[y] = lines[y].join("\t");
         };
 
         return lines.join("\n");
@@ -115,13 +116,13 @@ class MS {
 
     sweepAndClear(x, y) {
         this.sweepAround(this.map, x, y, (_x, _y, _i, _j) => {
-            if (this.map[_x][_y].value === MINE || this.map[_x][_y].revealed) {
+            if (this.map[_y][_x].value === MINE || this.map[_y][_x].revealed) {
                 return;
             }
 
-            this.map[_x][_y].revealed = true;
+            this.map[_y][_x].revealed = true;
 
-            if (_i == 0 || _j == 0 || this.map[_x][_y].value === 0) {
+            if (_i == 0 || _j == 0 || this.map[_y][_x].value === 0) {
                 this.sweepAndClear(_x, _y);
             }
         });
@@ -133,8 +134,8 @@ class MS {
             return
         }
 
-        if (this.map[x][y].value === MINE) {
-            this.map[x][y].revealed = true;
+        if (this.map[y][x].value === MINE) {
+            this.map[y][x].revealed = true;
             this.winLossState = false;
             clearInterval(this.timer);
             this.render();
@@ -151,12 +152,12 @@ class MS {
             return
         }
 
-        this.map[x][y].flagged = !this.map[x][y].flagged
+        this.map[y][x].flagged = !this.map[y][x].flagged
 
         let allCleared = true;
-        for (let _x = 0; _x < this.mapWidth; _x += 1) {
-            for (let _y = 0; _y < this.mapHeight; _y += 1) {
-                if (!(this.map[_x][_y].revealed || this.map[_x][_y].flagged)) {
+        for (let _y = 0; _y < this.mapHeight; _y += 1) {
+            for (let _x = 0; _x < this.mapWidth; _x += 1) {
+                if (!(this.map[_y][_x].revealed || this.map[_y][_x].flagged)) {
                     allCleared = false;
                     break;
                 }
@@ -191,15 +192,15 @@ class MS {
         })(this, x, y);
 
         let value, classes = ["square"];
-        if (this.map[x][y].revealed) {
-            value = this.map[x][y].value;
+        if (this.map[y][x].revealed) {
+            value = this.map[y][x].value || BLANK;
             classes.push("revealed")
-        } else if (this.map[x][y].flagged) {
+        } else if (this.map[y][x].flagged) {
             value = FLAG;
             classes.push("flagged")
         }
         else {
-            value = "\u00a0";
+            value = BLANK;
         }
 
         return <button key={key}
@@ -236,12 +237,12 @@ class MS {
     renderMap() {
         let rows = [], cols;
 
-        for (let x = 0; x < this.mapWidth; x += 1) {
+        for (let y = 0; y < this.mapHeight; y += 1) {
             cols = [];
-            for (let y = 0; y < this.mapHeight; y += 1) {
+            for (let x = 0; x < this.mapWidth; x += 1) {
                 cols.push(this.renderSquare(x, y));
             };
-            rows.push(<div key={["col", x].join('-')}>{cols}</div>);
+            rows.push(<div key={["row", y].join('-')}>{cols}</div>);
         };
 
         let winLose = null;
